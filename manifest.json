@@ -1,0 +1,37 @@
+{
+    "manifest_version": 3,
+    "name": "Hide Twitter Recommendations",
+    "version": "0.1.0",
+    "description": "Twitterのおすすめ欄を非表示にする",
+    "permissions": [
+        "storage",
+        "activeTab"
+    ],
+    "icons": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://x.com/*"
+            ],
+            "js": [
+                "src/content.js"
+            ],
+            "run_at": "document_start",
+            "type": "module"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "src/components/*"
+            ],
+            "matches": [
+                "https://x.com/*"
+            ]
+        }
+    ]
+}
