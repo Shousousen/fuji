@@ -1,5 +1,6 @@
 const HOME_PATH = '/home';
 const CHECK_INTERVAL = 500;
+const LOCATION_CHECK_INTERVAL = 500;
 const TAB_LABELS = {
   recommendations: ['おすすめ', 'For you', 'For You'],
   following: ['フォロー中', 'Following'],
@@ -15,6 +16,8 @@ function initialize() {
   patchHistoryEvents();
   window.addEventListener('locationchange', handleLocationChange);
   window.addEventListener('popstate', handleLocationChange);
+
+  window.setInterval(handleLocationChange, LOCATION_CHECK_INTERVAL);
 
   if (isHomeTimeline()) {
     startRecommendationRemoval();
@@ -91,7 +94,7 @@ function findTabByLabels(tabs, labels) {
 
 function matchTabLabels(tab, labels) {
   const text = normalizeText(tab.textContent);
-  return labels.some(label => text === normalizeText(label));
+  return labels.some(label => text.includes(normalizeText(label)));
 }
 
 function hideTab(tab) {

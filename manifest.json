@@ -18,20 +18,9 @@
                 "https://x.com/*"
             ],
             "js": [
-                "src/content.js"
+                "src/components/remover/remover.js"
             ],
-            "run_at": "document_start",
-            "type": "module"
-        }
-    ],
-    "web_accessible_resources": [
-        {
-            "resources": [
-                "src/components/*"
-            ],
-            "matches": [
-                "https://x.com/*"
-            ]
+            "run_at": "document_start"
         }
     ]
 }
