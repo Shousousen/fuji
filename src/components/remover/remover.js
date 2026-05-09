@@ -1,73 +1,141 @@
-const RECOMMENDATION_TEXT = 'おすすめ';
-const FOLLOWING_TEXT = 'フォロー中';
-const INTERVAL = 750;
-const MAX_ATTEMPTS = 10;
+const HOME_PATH = '/home';
+const CHECK_INTERVAL = 500;
+const LOCATION_CHECK_INTERVAL = 500;
+const TAB_LABELS = {
+  recommendations: ['おすすめ', 'For you', 'For You'],
+  following: ['フォロー中', 'Following'],
+};
 
-let currentTab = null;
-
-initializeRecommendationRemoval();
-
+let observer = null;
+let retryTimer = null;
 let previousUrl = window.location.href;
-setInterval(() => {
-  if (window.location.href !== previousUrl) {
-    console.log('URL has changed:', window.location.href);
-    previousUrl = window.location.href;
-    if (window.location.href.startsWith('https://x.com/home')) {
-      initializeRecommendationRemoval();
-    }
+
+initialize();
+
+function initialize() {
+  patchHistoryEvents();
+  window.addEventListener('locationchange', handleLocationChange);
+  window.addEventListener('popstate', handleLocationChange);
+
+  window.setInterval(handleLocationChange, LOCATION_CHECK_INTERVAL);
+
+  if (isHomeTimeline()) {
+    startRecommendationRemoval();
   }
-}, INTERVAL);
-
-function initializeRecommendationRemoval() {
-  removeRecommendationTab(INTERVAL, MAX_ATTEMPTS);
 }
 
-function removeRecommendationTab(interval, maxAttempts) {
-  waitForTargetDivs(interval, maxAttempts)
-    .then(tabDivs => {
-      tabDivs.forEach(div => {
-        const tabSpan = div.querySelector('span');
-        const underlineDiv = tabSpan?.nextElementSibling;
+function handleLocationChange() {
+  if (window.location.href === previousUrl) {
+    return;
+  }
 
-        if (underlineDiv?.style.backgroundColor !== '') {
-          currentTab = tabSpan.textContent;
-        }
-      });
+  previousUrl = window.location.href;
 
-      tabDivs.forEach(div => {
-        const tabSpan = div.querySelector('span');
+  if (isHomeTimeline()) {
+    startRecommendationRemoval();
+  } else {
+    stopRecommendationRemoval();
+  }
+}
 
-        if (tabSpan) {
-          const tabText = tabSpan.textContent;
-          if (tabText.includes(RECOMMENDATION_TEXT)) {
-            div.style.display = 'none';
-          }
-          if (tabText.includes(FOLLOWING_TEXT) && currentTab === RECOMMENDATION_TEXT) {
-            div.querySelector('a[role="tab"]').click();
-          }
-        }
-      });
-    })
-    .catch(error => {
-      console.error('Error in removeRecommendationTab:', error);
+function startRecommendationRemoval() {
+  removeRecommendationTab();
+
+  if (!observer) {
+    observer = new MutationObserver(removeRecommendationTab);
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
     });
+  }
+
+  if (!retryTimer) {
+    retryTimer = window.setInterval(removeRecommendationTab, CHECK_INTERVAL);
+  }
 }
 
-function waitForTargetDivs(interval, maxAttempts) {
-  return new Promise((resolve, reject) => {
-    let attempts = 0;
-    const timer = setInterval(() => {
-      const presentationDivs = document.querySelectorAll('div[role="presentation"]');
-      const tabDivs = Array.from(presentationDivs).filter(div => div.querySelector('a[role="tab"]'));
+function stopRecommendationRemoval() {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
 
-      if (tabDivs.length > 0) {
-        clearInterval(timer);
-        resolve(tabDivs);
-      } else if (attempts >= maxAttempts) {
-        clearInterval(timer);
-        reject(new Error('Failed to find target divs within the specified attempts'));
-      }
-      attempts++;
-    }, interval);
+  if (retryTimer) {
+    window.clearInterval(retryTimer);
+    retryTimer = null;
+  }
+}
+
+function removeRecommendationTab() {
+  const tabs = getTimelineTabs();
+  const recommendationTab = findTabByLabels(tabs, TAB_LABELS.recommendations);
+  const followingTab = findTabByLabels(tabs, TAB_LABELS.following);
+
+  if (!recommendationTab || !followingTab) {
+    return;
+  }
+
+  if (recommendationTab.getAttribute('aria-selected') === 'true') {
+    clickTab(followingTab);
+  }
+
+  hideTab(recommendationTab);
+}
+
+function getTimelineTabs() {
+  return Array.from(document.querySelectorAll('[role="tab"]'))
+    .filter(isVisible)
+    .filter(tab => matchTabLabels(tab, TAB_LABELS.recommendations) || matchTabLabels(tab, TAB_LABELS.following));
+}
+
+function findTabByLabels(tabs, labels) {
+  return tabs.find(tab => matchTabLabels(tab, labels));
+}
+
+function matchTabLabels(tab, labels) {
+  const text = normalizeText(tab.textContent);
+  return labels.some(label => text.includes(normalizeText(label)));
+}
+
+function hideTab(tab) {
+  const presentationWrapper = tab.closest('div[role="presentation"]');
+  const target = presentationWrapper || tab;
+
+  target.style.display = 'none';
+  target.setAttribute('aria-hidden', 'true');
+}
+
+function clickTab(tab) {
+  const clickable = tab.closest('a[href]') || tab.querySelector('a[href]') || tab;
+  clickable.click();
+}
+
+function normalizeText(text) {
+  return (text || '').replace(/\s+/g, ' ').trim();
+}
+
+function isVisible(element) {
+  return element.getClientRects().length > 0;
+}
+
+function isHomeTimeline() {
+  return window.location.hostname === 'x.com' && window.location.pathname === HOME_PATH;
+}
+
+function patchHistoryEvents() {
+  if (window.__hideTwitterRecommendationsHistoryPatched) {
+    return;
+  }
+
+  window.__hideTwitterRecommendationsHistoryPatched = true;
+
+  ['pushState', 'replaceState'].forEach(type => {
+    const original = history[type];
+
+    history[type] = function patchedHistoryState(...args) {
+      const result = original.apply(this, args);
+      window.dispatchEvent(new Event('locationchange'));
+      return result;
+    };
   });
 }

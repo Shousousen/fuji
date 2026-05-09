@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Hide Twitter Recommendations",
-    "version": "0.1.0",
-    "description": "Twitterのおすすめ欄を非表示にする",
+    "version": "0.1.2",
+    "description": "X.com のおすすめタブを非表示にし、フォロー中タブへ切り替える",
     "permissions": [
         "storage",
         "activeTab"
@@ -18,20 +18,9 @@
                 "https://x.com/*"
             ],
             "js": [
-                "src/content.js"
+                "src/components/remover/remover.js"
             ],
-            "run_at": "document_start",
-            "type": "module"
-        }
-    ],
-    "web_accessible_resources": [
-        {
-            "resources": [
-                "src/components/*"
-            ],
-            "matches": [
-                "https://x.com/*"
-            ]
+            "run_at": "document_start"
         }
     ]
 }
