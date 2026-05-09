@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Hide Twitter Recommendations",
     "version": "0.1.0",
-    "description": "Twitterのおすすめ欄を非表示にする",
+    "description": "X.com のおすすめタブを非表示にし、フォロー中タブへ切り替える",
     "permissions": [
         "storage",
         "activeTab"
