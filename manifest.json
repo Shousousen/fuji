@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Hide Twitter Recommendations",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "X.com のおすすめタブを非表示にし、フォロー中タブへ切り替える",
     "permissions": [
         "storage",

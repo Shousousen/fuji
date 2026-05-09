@@ -76,14 +76,14 @@ function removeRecommendationTab() {
   }
 
   if (recommendationTab.getAttribute('aria-selected') === 'true') {
-    followingTab.click();
+    clickTab(followingTab);
   }
 
   hideTab(recommendationTab);
 }
 
 function getTimelineTabs() {
-  return Array.from(document.querySelectorAll('a[role="tab"]'))
+  return Array.from(document.querySelectorAll('[role="tab"]'))
     .filter(isVisible)
     .filter(tab => matchTabLabels(tab, TAB_LABELS.recommendations) || matchTabLabels(tab, TAB_LABELS.following));
 }
@@ -103,6 +103,11 @@ function hideTab(tab) {
 
   target.style.display = 'none';
   target.setAttribute('aria-hidden', 'true');
+}
+
+function clickTab(tab) {
+  const clickable = tab.closest('a[href]') || tab.querySelector('a[href]') || tab;
+  clickable.click();
 }
 
 function normalizeText(text) {
